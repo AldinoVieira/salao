@@ -4,9 +4,16 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Produto;
-
+use Storage;
 class ControladorProduto extends Controller
-{
+    {
+    
+   /* public function __construct()
+    {
+        $this->middleware('auth');
+    }  */
+    
+    
     public function indexView()
     {
         return view('produtos');
@@ -40,12 +47,16 @@ class ControladorProduto extends Controller
      */
     public function store(Request $request)
     {
+        $path=$request->file('url')->store('upload');
+        
         $prod = new Produto();
         $prod->nome = $request->input('nome');
             $prod->preco = $request->input('preco');
             $prod->estoque = $request->input('estoque');
             $prod->classificacao = $request->input('classificacao');
-            $prod->url = $request->input('url');
+            $prod->fabricacao = $request->input('fabricacao');
+            $prod->validade = $request->input('validade');
+            $prod->url = $path;
             $prod->categoria_id = $request->input('categoria_id');
             $prod->save();
         return json_encode($prod);
@@ -59,9 +70,9 @@ class ControladorProduto extends Controller
      */
     public function show($id)
     {
-        $prod = Produto::find($id);
+         $prod = Produto::find($id);
         if (isset($prod)) {
-            return json_encode($prod);            
+                return json_encode($prod);  
         }
         return response('Produto não encontrado', 404);
     }
@@ -72,9 +83,24 @@ class ControladorProduto extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function showProd($id)
     {
-        //
+       
+         $prod = Produto::with(['categoria','imagem','ficah_tecnica'])->where('id',$id)->get();
+        if (isset($prod)) {
+            //return view('produto', compact('produtos'));
+         $prodOfertas;
+            foreach($prod as $p){
+                $prodOfertas = Produto::where('categoria_id', $p->categoria_id)->get();
+            }
+            
+            return view('exibirProduto', compact('prod','prodOfertas')); 
+          //echo "Lula Ladrão";
+        //return json_encode($prodOfertas);        
+        }
+        return response('Produto não encontrado', 404);
+            
+            
     }
 
     /**
@@ -92,6 +118,8 @@ class ControladorProduto extends Controller
             $prod->preco = $request->input('preco');
             $prod->estoque = $request->input('estoque');
             $prod->classificacao = $request->input('classificacao');
+            $prod->fabricacao = $request->input('fabricacao');
+            $prod->fabricao = $request->input('fabricao');
             $prod->url = $request->input('url');
             $prod->categoria_id = $request->input('categoria_id');
             $prod->save();
@@ -112,6 +140,8 @@ class ControladorProduto extends Controller
     {
         $prod = Produto::find($id);
         if (isset($prod)) {
+            $d = "public/../".$prod->url;
+            Storage::delete($d);
             $prod->delete();
             return response('OK', 200);
         }
@@ -122,7 +152,7 @@ class ControladorProduto extends Controller
          $produtos = Produto::where('categoria_id', $categoria_id)->get();
                         
                         
-return view('produto', compact('produtos'));
+        return view('produto', compact('produtos'));
         
     }
     
